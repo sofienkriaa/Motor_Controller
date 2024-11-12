@@ -18,7 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include <string.h>
+#include <stdio.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -45,6 +46,8 @@ ADC_HandleTypeDef hadc1;
 CAN_HandleTypeDef hcan;
 
 I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef hdma_i2c1_rx;
+DMA_HandleTypeDef hdma_i2c1_tx;
 
 SPI_HandleTypeDef hspi1;
 
@@ -53,12 +56,15 @@ UART_HandleTypeDef huart1;
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
-
+uint8_t TX_Buffer [] = "A" ; // DATA to send
+uint8_t buf[12];
+static const uint8_t AS_ADDR = 0x36 << 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_CAN_Init(void);
 static void MX_I2C1_Init(void);
@@ -71,7 +77,44 @@ static void MX_USB_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint32_t const  my_i2c_xfer(uint8_t const slave_address,
+                           uint8_t * const p_tx_buffer,
+                           size_t const tx_buffer_size,
+                           uint8_t * const p_rx_buffer,
+                           size_t const rx_buffer_size)
+{
 
+        uint32_t const timeout = 100;
+        HAL_StatusTypeDef result = HAL_OK;
+        bool is_rx_operation = true;
+
+        if ((NULL == p_tx_buffer) || (0 == tx_buffer_size)) {
+                result = HAL_ERROR;
+
+        } else if ((NULL == p_rx_buffer) || (0 == rx_buffer_size)) {
+                is_rx_operation = false;
+        }
+
+        if (HAL_OK == result) {
+                // TX operation
+                result = HAL_I2C_Master_Transmit(&hi2c1,
+                                                 slave_address,
+                                                 p_tx_buffer,
+                                                 (uint16_t)tx_buffer_size,
+                                                 timeout);
+        }
+
+        if ((HAL_OK == result) && (is_rx_operation)) {
+                // RX operation
+                result = HAL_I2C_Master_Receive(&hi2c1,
+                                                slave_address,
+                                                p_rx_buffer,
+                                                rx_buffer_size,
+                                                timeout);
+        }
+
+        return result;
+}
 /* USER CODE END 0 */
 
 /**
@@ -103,6 +146,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_CAN_Init();
   MX_I2C1_Init();
@@ -110,6 +154,12 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
+  volatile as5600_error_t result = as5600_init(my_i2c_xfer);
+
+  uint16_t * r_angle;
+  as5600_status_t * const p_status;
+//  uint32_t const timeout = 1000;
+//  HAL_StatusTypeDef ret = HAL_OK;
 
   /* USER CODE END 2 */
 
@@ -117,10 +167,34 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
-	HAL_Delay(100);
+	/*HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
+	HAL_Delay(500);
 	HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_RESET);
-	HAL_Delay(100);
+	HAL_Delay(1500);
+*/
+
+//	ret = HAL_I2C_Master_Transmit(&hi2c1, AS_ADDR, TX_Buffer, 1, timeout); //Sending in Blocking mode
+//	if ( ret != HAL_OK ) {
+//	  strcpy((char*)buf, "Error Tx\r\n");
+//	} else {
+//
+//	  // Read 2 bytes from the temperature register
+//	  ret = HAL_I2C_Master_Receive(&hi2c1, AS_ADDR, buf, 2, timeout);
+//	  if ( ret != HAL_OK ) {
+//		strcpy((char*)buf, "Error Rx\r\n");
+//	  }
+//	}
+//	sprintf((char*)buf,
+//				"%u.%u C\r\n",
+//				buf[0],
+//				buf[1]);
+
+
+	result = as5600_get_angle(r_angle);
+	sprintf((char*)buf,	"%u°\r\n", r_angle);
+	as5600_get_status(p_status);
+//
+//	printf("** Test finished successfully. ** \n\r");
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -392,6 +466,25 @@ static void MX_USB_PCD_Init(void)
   /* USER CODE BEGIN USB_Init 2 */
 
   /* USER CODE END USB_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 
 }
 
