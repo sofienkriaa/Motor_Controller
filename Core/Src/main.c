@@ -18,8 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include <string.h>
-#include <stdio.h>
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -56,9 +55,7 @@ UART_HandleTypeDef huart1;
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
-uint8_t TX_Buffer [] = "A" ; // DATA to send
-uint8_t buf[12];
-static const uint8_t AS_ADDR = 0x36 << 1;
+char buf[20];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,6 +74,9 @@ static void MX_USB_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
+
 uint32_t const  my_i2c_xfer(uint8_t const slave_address,
                            uint8_t * const p_tx_buffer,
                            size_t const tx_buffer_size,
@@ -153,13 +153,12 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
+
   /* USER CODE BEGIN 2 */
   volatile as5600_error_t result = as5600_init(my_i2c_xfer);
 
   uint16_t * r_angle;
   as5600_status_t * const p_status;
-//  uint32_t const timeout = 1000;
-//  HAL_StatusTypeDef ret = HAL_OK;
 
   /* USER CODE END 2 */
 
@@ -167,34 +166,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	/*HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
 	HAL_Delay(500);
 	HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_RESET);
 	HAL_Delay(1500);
-*/
-
-//	ret = HAL_I2C_Master_Transmit(&hi2c1, AS_ADDR, TX_Buffer, 1, timeout); //Sending in Blocking mode
-//	if ( ret != HAL_OK ) {
-//	  strcpy((char*)buf, "Error Tx\r\n");
-//	} else {
-//
-//	  // Read 2 bytes from the temperature register
-//	  ret = HAL_I2C_Master_Receive(&hi2c1, AS_ADDR, buf, 2, timeout);
-//	  if ( ret != HAL_OK ) {
-//		strcpy((char*)buf, "Error Rx\r\n");
-//	  }
-//	}
-//	sprintf((char*)buf,
-//				"%u.%u C\r\n",
-//				buf[0],
-//				buf[1]);
-
 
 	result = as5600_get_angle(r_angle);
-	sprintf((char*)buf,	"%u°\r\n", r_angle);
-	as5600_get_status(p_status);
-//
-//	printf("** Test finished successfully. ** \n\r");
+	result = as5600_get_status(p_status);
+
+	printf("%d: %d  \r\n", (uint8_t)*p_status, *r_angle);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -519,7 +499,21 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+int __io_putchar(int ch)
+{
+ // Write character to ITM ch.0
+ ITM_SendChar(ch);
+ return(ch);
+}
 
+int puts(const char * ch){
+	 int DataIdx;
+	 for(DataIdx = 0; DataIdx < strlen(ch)+1; DataIdx++)
+	 {
+		 ITM_SendChar(*ch++);
+	 }
+	 return(DataIdx);
+}
 /* USER CODE END 4 */
 
 /**
