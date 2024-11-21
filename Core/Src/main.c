@@ -153,7 +153,6 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
-
   /* USER CODE BEGIN 2 */
   volatile as5600_error_t result = as5600_init(my_i2c_xfer);
 
@@ -166,15 +165,37 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
-	HAL_Delay(500);
+	/*HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
+	HAL_Delay(50);
 	HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_RESET);
-	HAL_Delay(1500);
+	HAL_Delay(150);
 
 	result = as5600_get_angle(r_angle);
 	result = as5600_get_status(p_status);
 
-	printf("%d: %d  \r\n", (uint8_t)*p_status, *r_angle);
+	printf("%d: %d  \r\n", (uint8_t)*p_status, *r_angle);*/
+
+	HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, DIR_PIN, GPIO_PIN_SET);
+
+	for(int x = 0; x < stepsPerRevolution; x++){
+		HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_SET);
+		HAL_Delay(2);
+		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_RESET);
+		HAL_Delay(2);
+	}
+	HAL_Delay(500);
+
+	HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, DIR_PIN, GPIO_PIN_RESET);
+
+	for(int x = 0; x < stepsPerRevolution; x++){
+		HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_SET);
+		HAL_Delay(2);
+		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_RESET);
+		HAL_Delay(2);
+	}
+	HAL_Delay(500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -480,12 +501,23 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13|GPIO_PIN_14, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PC13 PC14 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED_Pin_Pin */
   GPIO_InitStruct.Pin = LED_Pin_Pin;

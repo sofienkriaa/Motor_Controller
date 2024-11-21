@@ -60,6 +60,11 @@ void Error_Handler(void);
 #define LED_Pin_Pin GPIO_PIN_0
 #define LED_Pin_GPIO_Port GPIOB
 
+#define DIR_PIN GPIO_PIN_13
+#define STEP_PIN GPIO_PIN_14
+#define STEPPER_Pin_GPIO_Port GPIOC
+#define stepsPerRevolution  200
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
