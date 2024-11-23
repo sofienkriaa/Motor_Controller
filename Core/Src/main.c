@@ -154,10 +154,10 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
+
   volatile as5600_error_t result = as5600_init(my_i2c_xfer);
 
-  uint16_t * r_angle;
-  as5600_status_t * const p_status;
+  uint16_t r_angle = 0u;
 
   /* USER CODE END 2 */
 
@@ -179,10 +179,18 @@ int main(void)
 
 	for(int x = 0; x < stepsPerRevolution; x++){
 		HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_SET);
+
 		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_SET);
 		HAL_Delay(2);
+
+		result = as5600_get_angle(&r_angle);
+		printf(":: %d  \r\n", r_angle);
+
 		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_RESET);
 		HAL_Delay(2);
+
+		result = as5600_get_angle(&r_angle);
+		printf(":: %d  \r\n", r_angle);
 	}
 	HAL_Delay(500);
 
@@ -190,10 +198,18 @@ int main(void)
 
 	for(int x = 0; x < stepsPerRevolution; x++){
 		HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_RESET);
+
 		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_SET);
 		HAL_Delay(2);
+
+		result = as5600_get_angle(&r_angle);
+		printf(":: %d  \r\n", r_angle);
+
 		HAL_GPIO_WritePin(STEPPER_Pin_GPIO_Port, STEP_PIN, GPIO_PIN_RESET);
 		HAL_Delay(2);
+
+		result = as5600_get_angle(&r_angle);
+		printf(":: %d  \r\n", r_angle);
 	}
 	HAL_Delay(500);
     /* USER CODE END WHILE */
