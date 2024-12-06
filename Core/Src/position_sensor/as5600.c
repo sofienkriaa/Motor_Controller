@@ -39,7 +39,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "as5600.h"
+#include "position_sensor/as5600.h"
 
 /*
  *******************************************************************************
