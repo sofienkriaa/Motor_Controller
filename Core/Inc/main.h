@@ -31,6 +31,7 @@ extern "C" {
 #include "position_sensor/as5600.h"
 #include <stdio.h>
 #include <string.h>
+#include "motor_control/SimpleFOC.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
